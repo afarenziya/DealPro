@@ -87,25 +87,52 @@ export class ProductScraper {
                     $('img[id*="image"]').first().attr('src') ||
                     '';
 
-    // Multiple selectors for current/sale price
-    const salePriceText = $('.a-price.a-text-price.a-size-medium.apexPriceToPay .a-offscreen').text() ||
-                         $('.a-price-current .a-offscreen').text() ||
-                         $('.a-price.a-offscreen').first().text() ||
-                         $('.a-price-whole').text() ||
-                         $('[data-automation-id="price"]').text() ||
-                         $('.a-text-price .a-offscreen').text() ||
-                         '';
+    // Multiple selectors for current/sale price - find the first valid price
+    let salePriceText = '';
+    const salePriceSelectors = [
+      '.a-price.a-text-price.a-size-medium.apexPriceToPay .a-offscreen',
+      '.a-price-current .a-offscreen',
+      '.a-price.a-offscreen',
+      '.a-price-whole',
+      '[data-automation-id="price"]',
+      '.a-text-price .a-offscreen'
+    ];
+    
+    for (const selector of salePriceSelectors) {
+      const price = $(selector).first().text().trim();
+      if (price && price.match(/[\d.,]/)) {
+        salePriceText = price;
+        break;
+      }
+    }
 
-    // Multiple selectors for original price
-    const originalPriceText = $('.a-price.a-text-strike .a-offscreen').text() ||
-                             $('.a-price-was .a-offscreen').text() ||
-                             $('.a-text-strike .a-offscreen').text() ||
-                             $('[data-automation-id="was-price"]').text() ||
-                             '';
+    // Multiple selectors for original price - find the first valid price
+    let originalPriceText = '';
+    const originalPriceSelectors = [
+      '.a-price.a-text-strike .a-offscreen',
+      '.a-price-was .a-offscreen',
+      '.a-text-strike .a-offscreen',
+      '[data-automation-id="was-price"]'
+    ];
+    
+    for (const selector of originalPriceSelectors) {
+      const price = $(selector).first().text().trim();
+      if (price && price.match(/[\d.,]/) && price !== salePriceText) {
+        originalPriceText = price;
+        break;
+      }
+    }
 
-    // Clean price values - handle both INR and $ formats
-    const salePrice = salePriceText.replace(/[^\d.,]/g, '').replace(/,/g, '');
-    const originalPrice = originalPriceText.replace(/[^\d.,]/g, '').replace(/,/g, '');
+    // Clean price values - extract first valid numeric value
+    const cleanPrice = (priceText: string): string => {
+      if (!priceText) return '';
+      // Extract only the first numeric value (including decimals)
+      const match = priceText.match(/[\d,]+\.?\d*/);
+      return match ? match[0].replace(/,/g, '') : '';
+    };
+    
+    const salePrice = cleanPrice(salePriceText);
+    const originalPrice = cleanPrice(originalPriceText);
 
     // Calculate discount
     let discount = 0;
@@ -328,9 +355,16 @@ export class ProductScraper {
       }
     }
 
-    // Clean price values - handle both INR format with commas
-    const salePrice = salePriceText.replace(/[^\d.,]/g, '').replace(/,/g, '');
-    const originalPrice = originalPriceText.replace(/[^\d.,]/g, '').replace(/,/g, '');
+    // Clean price values - extract first valid numeric value
+    const cleanPrice = (priceText: string): string => {
+      if (!priceText) return '';
+      // Extract only the first numeric value (including decimals)
+      const match = priceText.match(/[\d,]+\.?\d*/);
+      return match ? match[0].replace(/,/g, '') : '';
+    };
+    
+    const salePrice = cleanPrice(salePriceText);
+    const originalPrice = cleanPrice(originalPriceText);
 
     // Multiple selectors for discount percentage
     const discountText = $('._3Ay6Sb._31Dcoz').text() ||
