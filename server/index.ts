@@ -37,7 +37,11 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  const PORT = process.env.PORT || 3000;
   const server = await registerRoutes(app);
+  server.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+  });
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
