@@ -1,130 +1,45 @@
-import { type User, type InsertUser, type Product, type InsertProduct, products, users } from "@shared/schema";
+import { type User, type InsertUser, type Product, type InsertProduct } from "@shared/schema";
 import { randomUUID } from "crypto";
-import { drizzle } from 'drizzle-orm/neon-http';
-import { neon } from '@neondatabase/serverless';
-import { eq, desc } from 'drizzle-orm';
 
-export interface IStorage {
-  getUser(id: string): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
-  
-  getProducts(): Promise<Product[]>;
-  getProduct(id: string): Promise<Product | undefined>;
-  createProduct(product: InsertProduct): Promise<Product>;
-  deleteProduct(id: string): Promise<boolean>;
-}
+export const storage = {
+  users: new Map<string, User>(),
+  products: new Map<string, Product>(),
 
-export class MemStorage implements IStorage {
-  private users: Map<string, User>;
-  private products: Map<string, Product>;
-
-  constructor() {
-    this.users = new Map();
-    this.products = new Map();
-  }
-
-  async getUser(id: string): Promise<User | undefined> {
+  async getUser(id: string) {
     return this.users.get(id);
-  }
+  },
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
-  }
+  async getUserByUsername(username: string) {
+    return Array.from(this.users.values()).find((u) => u.username === username);
+  },
 
-  async createUser(insertUser: InsertUser): Promise<User> {
+  async createUser(user: InsertUser) {
     const id = randomUUID();
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
-    return user;
-  }
+    const newUser = { ...user, id } as User;
+    this.users.set(id, newUser);
+    return newUser;
+  },
 
-  async getProducts(): Promise<Product[]> {
-    return Array.from(this.products.values()).sort((a, b) => 
-      new Date(b.createdAt || '').getTime() - new Date(a.createdAt || '').getTime()
-    );
-  }
+  async getProducts() {
+    return Array.from(this.products.values());
+  },
 
-  async getProduct(id: string): Promise<Product | undefined> {
+  async getProduct(id: string) {
     return this.products.get(id);
-  }
+  },
 
-  async createProduct(insertProduct: InsertProduct): Promise<Product> {
+  async createProduct(product: InsertProduct) {
     const id = randomUUID();
-    const product: Product = { 
-      ...insertProduct,
-      id, 
+    const newProduct = {
+      ...product,
+      id,
       createdAt: new Date().toISOString(),
-      description: insertProduct.description || null,
-      imageUrl: insertProduct.imageUrl || null,
-      originalPrice: insertProduct.originalPrice || null,
-      salePrice: insertProduct.salePrice || null,
-      discount: insertProduct.discount || null,
-      category: insertProduct.category || null
-    };
-    this.products.set(id, product);
-    return product;
-  }
+    } as Product;
+    this.products.set(id, newProduct);
+    return newProduct;
+  },
 
-  async deleteProduct(id: string): Promise<boolean> {
+  async deleteProduct(id: string) {
     return this.products.delete(id);
   }
-}
-
-// PostgreSQL Database Storage Implementation
-// Use in-memory storage for development
-let storage: IStorage = new MemStorage();
-
-// Use this function to initialize database storage in production
-export function initializeStorage() {
-  if (process.env.NODE_ENV !== 'development' && process.env.DATABASE_URL) {
-    const sql = neon(process.env.DATABASE_URL);
-    const db = drizzle(sql);
-    storage = new MemStorage(); // For now using MemStorage in all environments
-  }
-}
-
-export function getStorage(): IStorage {
-  return storage;
-}
-
-  async getUser(id: string): Promise<User | undefined> {
-    const result = await this.db.select().from(users).where(eq(users.id, id));
-    return result[0];
-  }
-
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    const result = await this.db.select().from(users).where(eq(users.username, username));
-    return result[0];
-  }
-
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const result = await this.db.insert(users).values(insertUser).returning();
-    return result[0];
-  }
-
-  async getProducts(): Promise<Product[]> {
-    const result = await this.db.select().from(products).orderBy(desc(products.createdAt));
-    return result;
-  }
-
-  async getProduct(id: string): Promise<Product | undefined> {
-    const result = await this.db.select().from(products).where(eq(products.id, id));
-    return result[0];
-  }
-
-  async createProduct(insertProduct: InsertProduct): Promise<Product> {
-    const result = await this.db.insert(products).values(insertProduct).returning();
-    return result[0];
-  }
-
-  async deleteProduct(id: string): Promise<boolean> {
-    const result = await this.db.delete(products).where(eq(products.id, id));
-    return result.rowCount! > 0;
-  }
-}
-
-// Use database storage instead of memory storage
-export const storage = new DBStorage();
+};
