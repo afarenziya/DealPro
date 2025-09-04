@@ -65,7 +65,7 @@ export default function AddProduct() {
             <div>
               <Link to="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity" data-testid="logo-link">
                 <i className="fas fa-shopping-cart text-primary text-2xl"></i>
-                <h1 className="text-2xl font-bold text-primary">AffiliateHub</h1>
+                <h1 className="text-2xl font-bold text-primary">DealPro</h1>
               </Link>
             </div>
             
