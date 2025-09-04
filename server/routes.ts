@@ -5,6 +5,8 @@ import { ProductScraper } from "./services/scraper";
 import { addProductUrlSchema, insertProductSchema } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  const server = createServer(app);
+  
   // Get all products
   app.get("/api/products", async (req, res) => {
     try {
