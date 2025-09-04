@@ -92,17 +92,35 @@ export class ProductScraper {
     const salePriceSelectors = [
       '.a-price.a-text-price.a-size-medium.apexPriceToPay .a-offscreen',
       '.a-price-current .a-offscreen',
-      '.a-price.a-offscreen',
       '.a-price-whole',
       '[data-automation-id="price"]',
       '.a-text-price .a-offscreen'
     ];
     
     for (const selector of salePriceSelectors) {
-      const price = $(selector).first().text().trim();
-      if (price && price.match(/[\d.,]/)) {
-        salePriceText = price;
-        break;
+      const elements = $(selector);
+      if (elements.length > 0) {
+        const price = elements.eq(0).text().trim();
+        if (price && price.match(/[\d.,]/)) {
+          salePriceText = price;
+          break;
+        }
+      }
+    }
+    
+    // If no price found with specific selectors, try more generic ones one by one
+    if (!salePriceText) {
+      const genericSelectors = ['.a-price .a-offscreen'];
+      for (const selector of genericSelectors) {
+        const elements = $(selector);
+        for (let i = 0; i < elements.length; i++) {
+          const price = elements.eq(i).text().trim();
+          if (price && price.match(/[\d.,]/) && !price.includes('%')) {
+            salePriceText = price;
+            break;
+          }
+        }
+        if (salePriceText) break;
       }
     }
 
@@ -126,9 +144,23 @@ export class ProductScraper {
     // Clean price values - extract first valid numeric value
     const cleanPrice = (priceText: string): string => {
       if (!priceText) return '';
-      // Extract only the first numeric value (including decimals)
-      const match = priceText.match(/[\d,]+\.?\d*/);
-      return match ? match[0].replace(/,/g, '') : '';
+      
+      // Remove currency symbols and non-numeric characters except digits, commas, and dots
+      let cleaned = priceText.replace(/[^\d.,]/g, '');
+      
+      // If we have multiple decimal points or numbers, extract just the first valid price
+      const priceMatch = cleaned.match(/^[\d,]*\.?\d+/);
+      
+      if (priceMatch) {
+        // Remove commas and return the clean price
+        const price = priceMatch[0].replace(/,/g, '');
+        // Validate it's a reasonable price (not empty and is a valid number)
+        if (price && !isNaN(parseFloat(price)) && parseFloat(price) > 0) {
+          return price;
+        }
+      }
+      
+      return '';
     };
     
     const salePrice = cleanPrice(salePriceText);
@@ -358,9 +390,23 @@ export class ProductScraper {
     // Clean price values - extract first valid numeric value
     const cleanPrice = (priceText: string): string => {
       if (!priceText) return '';
-      // Extract only the first numeric value (including decimals)
-      const match = priceText.match(/[\d,]+\.?\d*/);
-      return match ? match[0].replace(/,/g, '') : '';
+      
+      // Remove currency symbols and non-numeric characters except digits, commas, and dots
+      let cleaned = priceText.replace(/[^\d.,]/g, '');
+      
+      // If we have multiple decimal points or numbers, extract just the first valid price
+      const priceMatch = cleaned.match(/^[\d,]*\.?\d+/);
+      
+      if (priceMatch) {
+        // Remove commas and return the clean price
+        const price = priceMatch[0].replace(/,/g, '');
+        // Validate it's a reasonable price (not empty and is a valid number)
+        if (price && !isNaN(parseFloat(price)) && parseFloat(price) > 0) {
+          return price;
+        }
+      }
+      
+      return '';
     };
     
     const salePrice = cleanPrice(salePriceText);
