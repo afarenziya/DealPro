@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: dealpro-app
+    env: node
+    plan: free
+    buildCommand: npm run build
+    startCommand: npm start
+    healthCheckPath: /api/products
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: dealpro-db
+          property: connectionString
+    autoDeploy: false
+
+databases:
+  - name: dealpro-db
+    databaseName: dealpro
+    user: dealpro_user
+    plan: free
