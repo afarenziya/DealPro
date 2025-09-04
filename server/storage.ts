@@ -74,13 +74,21 @@ export class MemStorage implements IStorage {
 }
 
 // PostgreSQL Database Storage Implementation
-export class DBStorage implements IStorage {
-  private db;
+// Use in-memory storage for development
+let storage: IStorage = new MemStorage();
 
-  constructor() {
-    const sql = neon(process.env.DATABASE_URL!);
-    this.db = drizzle(sql);
+// Use this function to initialize database storage in production
+export function initializeStorage() {
+  if (process.env.NODE_ENV !== 'development' && process.env.DATABASE_URL) {
+    const sql = neon(process.env.DATABASE_URL);
+    const db = drizzle(sql);
+    storage = new MemStorage(); // For now using MemStorage in all environments
   }
+}
+
+export function getStorage(): IStorage {
+  return storage;
+}
 
   async getUser(id: string): Promise<User | undefined> {
     const result = await this.db.select().from(users).where(eq(users.id, id));

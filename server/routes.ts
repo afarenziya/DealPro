@@ -1,8 +1,10 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./storage";
+import { getStorage } from "./storage";
 import { ProductScraper } from "./services/scraper";
 import { addProductUrlSchema, insertProductSchema } from "@shared/schema";
+
+const storage = getStorage();
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Get all products
