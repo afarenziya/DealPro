@@ -11,5 +11,13 @@ services:
       - key: PORT
         value: "3000"
       - key: DATABASE_URL
-        sync: false # Will be manually added in Render dashboard
+        fromDatabase:
+          name: dealpro_db
+          property: connectionString
     autoDeploy: false
+
+  - type: postgres
+    name: dealpro_db
+    plan: free
+    ipAllowList: [] # only allow internal connections
+    postgresMajorVersion: 15
